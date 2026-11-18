@@ -171,10 +171,22 @@
     const target=String(report.website).replace(/^https?:\/\//,"").split("/")[0].replace(/^www\./,"");
     const links=[...content.matchAll(/\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/gi)].map(m=>m[1]);
     const hasLink=links.some(url=>{try{const host=new URL(url).hostname.replace(/^www\./,"");return host===target||host.endsWith("."+target);}catch(_){return false;}});
-    const hasBrand=content.toLowerCase().includes(String(report.projectName).toLowerCase());
-    let passed=candidate.checkId==="backlink-profile"?hasLink:hasBrand;
-    let detail=candidate.checkId==="backlink-profile"?(hasLink?"A live external page links to "+target+".":"No backlink to "+target+" was found in this candidate; this does not prove that no backlinks exist."):(hasBrand?"The project name was found in the readable external page. Authority and engagement are not measured.":"The project name was not confirmed in the readable page.");
-    return {passed,detail,checkedAt:new Date().toISOString()};
+    const lower=content.toLowerCase(),brand=String(report.projectName).toLowerCase(),hasBrand=lower.includes(brand);
+    const host=new URL(candidate.url).hostname.toLowerCase();
+    const social=/\b(x\.com|twitter\.com|facebook\.com|instagram\.com|youtube\.com|youtu\.be|discord\.com|t\.me|linkedin\.com)\b/.test(host);
+    const community=/\b(steemit\.com|steemitkorea\.com|reddit\.com|discord\.com|bitcointalk\.org)\b/.test(host);
+    const editorial=/\b(press release|news|announc|launch|media|interview|coverage)\b/.test(lower);
+    const guest=/\b(guest post|contributor|written by|author|review|gameplay)\b/.test(lower);
+    const directory=/\b(directory|listing|catalog|database|collection|discover)\b/.test(lower);
+    let passed=false,detail="";
+    if(candidate.checkId==="backlink-profile"){passed=hasLink;detail=passed?"A live external page contains a link to "+target+".":"No live link to "+target+" was found in the extracted links. A plain-text mention does not count as a backlink.";}
+    else if(candidate.checkId==="social-presence"){passed=hasBrand&&social;detail=passed?"The project name was found on a recognized social platform. Engagement and audience size are not measured.":"A matching project mention on a recognized social platform was not confirmed.";}
+    else if(candidate.checkId==="community"){passed=hasBrand&&community;detail=passed?"The project name was found on a recognized community platform. Participation quality is not measured.":"A matching project mention on a recognized community platform was not confirmed.";}
+    else if(candidate.checkId==="digital-pr"){passed=hasBrand&&editorial;detail=passed?"The project name and editorial/news context were found on this external page. Publication authority is not scored.":"The page did not provide both a project mention and clear editorial/news context.";}
+    else if(candidate.checkId==="guest-posting"){passed=hasBrand&&guest;detail=passed?"The project name and article/review context were found on this external page. Editorial independence is not scored.":"The page did not provide both a project mention and guest-article/review context.";}
+    else if(candidate.checkId==="directories"){passed=hasBrand&&directory;detail=passed?"The project name and directory/listing context were found on this external page. Listing quality is not scored.":"The page did not provide both a project mention and directory/listing context.";}
+    else{passed=hasBrand;detail=passed?"The project name was found in readable external content.":"The project name was not confirmed in the readable page.";}
+    return {passed,detail,checkedAt:new Date().toISOString(),host,hasBacklink:hasLink,hasBrand};
   }
   function updateOffPageCandidate(candidate,result,report){
     candidate.verification=result;candidate.verified=true;
