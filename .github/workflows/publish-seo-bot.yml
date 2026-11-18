@@ -17,6 +17,11 @@ jobs:
       - name: Check out SEO Bot source
         uses: actions/checkout@v4
 
+      - name: Validate SEO bot source and checklists
+        run: |
+          node --check script.js
+          node -e "JSON.parse(require('fs').readFileSync('on-page-checklist.json','utf8')); JSON.parse(require('fs').readFileSync('off-page-checklist.json','utf8')); console.log('SEO source and checklist JSON are valid.')"
+
       - name: Explain missing deployment token
         if: env.SITE_DEPLOY_TOKEN == ''
         run: echo 'SITE_DEPLOY_TOKEN is not configured. Source files are saved; automatic publishing is skipped.'
