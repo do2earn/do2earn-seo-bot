@@ -33,8 +33,10 @@ jobs:
       - name: Sync SEO Bot to the website subdirectory
         if: env.SITE_DEPLOY_TOKEN != ''
         run: |
-          mkdir -p website/do2earn-seo
-          cp index.html style.css script.js seo-checklist.json website/do2earn-seo-bot/
+          set -euo pipefail
+          TARGET="website/do2earn-seo-bot"
+          mkdir -p "$TARGET"
+          cp index.html style.css script.js seo-checklist.json "$TARGET/"
           cd website
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
