@@ -34,11 +34,11 @@ jobs:
         if: env.SITE_DEPLOY_TOKEN != ''
         run: |
           mkdir -p website/do2earn-seo
-          cp index.html style.css script.js seo-checklist.json website/do2earn-seo/
+          cp index.html style.css script.js seo-checklist.json website/do2earn-seo-bot/
           cd website
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add do2earn-seo/index.html do2earn-seo/style.css do2earn-seo/script.js do2earn-seo/seo-checklist.json
+          git add do2earn-seo-bot/index.html do2earn-seo-bot/style.css do2earn-seo-bot/script.js do2earn-seo-bot/seo-checklist.json
           if git diff --cached --quiet; then
             echo 'No website changes to publish.'
           else
