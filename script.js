@@ -32,9 +32,38 @@
     $("report-note").textContent = report.note;
     try { localStorage.setItem("do2earn-seo-bot:last-report:" + report.projectId, JSON.stringify(report)); } catch (_) {}
   }
-  async function fetchJson(url) { const response = await fetch(url, { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" }); if (!response.ok) throw new Error("GitHub request failed (" + response.status + ") for " + url); return response.json(); }
+  function retryTime(response) {
+    const retryAfter = response.headers.get("retry-after");
+    if (retryAfter && /^\\d+$/.test(retryAfter)) return new Date(Date.now() + Number(retryAfter) * 1000).toLocaleString();
+    const reset = Number(response.headers.get("x-ratelimit-reset"));
+    if (Number.isFinite(reset) && reset > 0) return new Date(reset * 1000).toLocaleString();
+    return "";
+  }
+  async function fetchJson(url) {
+    const response = await fetch(url, {
+      headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
+      cache: "no-store"
+    });
+    if (!response.ok) {
+      const raw = await response.text();
+      let message = "";
+      try { const payload = JSON.parse(raw); message = payload.message || ""; }
+      catch (_) { message = raw.slice(0, 300); }
+      const rateLimited = response.status === 429 ||
+        response.headers.get("x-ratelimit-remaining") === "0" ||
+        /rate limit|secondary rate limit|abuse detection/i.test(message);
+      const retry = retryTime(response);
+      let detail = "GitHub API returned HTTP " + response.status + ".";
+      if (message) detail += " GitHub: " + message;
+      if (rateLimited) detail += retry ? " Rate limit reached. Try again after: " + retry + "." : " GitHub rate limit reached. Please wait before retrying.";
+      else if (response.status === 403) detail += " This may be a permission restriction or an API rate limit.";
+      else if (response.status === 404) detail += " The repository or requested branch/tree was not found, or is not accessible.";
+      throw new Error(detail);
+    }
+    return response.json();
+  }
   async function loadProjectFiles(project) {
-    const repoInfo = await fetchJson("https://api.github.com/repos/" + project.repository); const branch = repoInfo.default_branch || project.branch;
+    const branch = project.branch || "main";
     const tree = await fetchJson("https://api.github.com/repos/" + project.repository + "/git/trees/" + encodeURIComponent(branch) + "?recursive=1");
     if (tree.truncated) throw new Error("GitHub returned a truncated file tree. The project is too large for a complete scan.");
     const allowed = new Set(rules.scan.extensions); const files = (tree.tree || []).filter(item => item.type === "blob" && allowed.has("." + item.path.split(".").pop().toLowerCase()));
