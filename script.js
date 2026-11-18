@@ -147,8 +147,9 @@
         if(!response.ok) throw new Error("HTTP "+response.status);
         const payload=await response.json();
         let rows=Array.isArray(payload.data)?payload.data:(Array.isArray(payload.results)?payload.results:(Array.isArray(payload.data?.results)?payload.data.results:[]));
-        if(!rows.length&&typeof payload.content==="string"){
-          const urls=[...new Set(payload.content.match(/https?:\/\/[^\s)\]>]+/g)||[])];
+        const searchText=payload.content||payload.data?.content||"";
+        if(!rows.length&&typeof searchText==="string"){
+          const urls=[...new Set(searchText.match(/https?:\/\/[^\s)\]>]+/g)||[])];
           rows=urls.map(url=>({url,title:url}));
         }
         rows.slice(0,4).forEach((row,i)=>{
