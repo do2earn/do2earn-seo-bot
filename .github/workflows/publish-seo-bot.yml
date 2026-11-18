@@ -1,0 +1,47 @@
+name: Publish SEO Bot
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      SITE_DEPLOY_TOKEN: ${{ secrets.SITE_DEPLOY_TOKEN }}
+    steps:
+      - name: Check out SEO Bot source
+        uses: actions/checkout@v4
+
+      - name: Explain missing deployment token
+        if: env.SITE_DEPLOY_TOKEN == ''
+        run: echo 'SITE_DEPLOY_TOKEN is not configured. Source files are saved; automatic publishing is skipped.'
+
+      - name: Check out the Do2Earn website
+        if: env.SITE_DEPLOY_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          repository: do2earn/do2earn.github.io
+          ref: main
+          token: ${{ secrets.SITE_DEPLOY_TOKEN }}
+          path: website
+
+      - name: Sync SEO Bot to the website subdirectory
+        if: env.SITE_DEPLOY_TOKEN != ''
+        run: |
+          mkdir -p website/do2earn-seo
+          cp index.html style.css script.js seo-checklist.json website/do2earn-seo/
+          cd website
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add do2earn-seo/index.html do2earn-seo/style.css do2earn-seo/script.js do2earn-seo/seo-checklist.json
+          if git diff --cached --quiet; then
+            echo 'No website changes to publish.'
+          else
+            git commit -m 'Deploy Do2Earn SEO Bot'
+            git push origin main
+          fi
