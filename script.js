@@ -153,7 +153,7 @@
             if (loading === "lazy" || (loading !== "eager" && priority !== "high")) totals.heroMissing++;
           } else if (explicitBelow) {
             totals.below++;
-            if (loading !== "lazy") totals.belowMissing++;
+            if (loading !== "lazy" || priority === "high") totals.belowMissing++;
           } else {
             totals.unknown++;
           }
