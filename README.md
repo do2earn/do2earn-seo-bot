@@ -7,7 +7,7 @@ Automated source-code SEO checks for Do2Earn projects.
 - On-page and technical SEO source checks.
 - Projects currently configured: [Steem Flags](https://steemflags.do2earn.dev) and [Steem Games](https://steemgames.do2earn.dev).
 - On-page and technical checks are defined in `on-page-checklist.json`.
-- Off-page checks are defined separately in `off-page-checklist.json`; they remain `UNKNOWN` until verifiable external evidence or a data provider is connected.
+- Off-page checks are defined separately in `off-page-checklist.json`. The audit discovers candidate references through public web search and verifies selected source pages with the Jina Reader service. Search discovery is not an exhaustive backlink index.
 - No database, Cloudflare Worker, or paid SEO API is required.
 - Every audit recalculates the checks from the repositories' public source files. The latest report is cached only in the browser's LocalStorage.
 - Audit outcomes are `PASS`, `FAIL`, `UNKNOWN`, or `N/A`. `UNKNOWN` is excluded from the verified score and remains visible in coverage; `N/A` is excluded from both the score and applicable-check denominator.
@@ -32,8 +32,8 @@ The workflow creates/updates only `do2earn-seo-bot/` in the website repository. 
 
 ## Run locally
 
-Serve this directory with a static web server and open `index.html`. The browser loads `on-page-checklist.json` and `off-page-checklist.json` from this directory and reads public repository files through GitHub's public API. Opening the file directly with a `file://` URL may prevent browser requests from working.
+Serve this directory with a static web server and open `index.html`. The browser loads both checklist files, reads public repository files through GitHub, discovers external references with Jina Search, and reads candidate pages with Jina Reader. Opening the file directly with a `file://` URL may prevent browser requests from working.
 
 ## Limitations
 
-This is a source-code audit, not a crawler of the live rendered website. It does not measure Google indexing, Core Web Vitals, full backlink profiles, brand mentions, or live page performance. A PASS means the relevant pattern was found in source; it is not a guarantee of search ranking. Some checks are heuristic and may need manual verification.
+This is a source-code audit, not a crawler of the live rendered website. It does not provide a complete backlink index, referring-domain totals, historical link gains/losses, backlink quality scoring, Google indexing coverage, Core Web Vitals, or social engagement analytics. Backlink profile searches are discovery-only; each candidate must be verified, and search coverage is not exhaustive. Backlink quality and monitoring require Search Console, Bing Webmaster Tools, a specialist backlink provider, or human review. A PASS means the relevant pattern was found in source; it is not a guarantee of search ranking. Some checks are heuristic and may need manual verification.
