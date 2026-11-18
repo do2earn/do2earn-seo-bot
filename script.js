@@ -120,6 +120,7 @@
     const robotsPaths = [...paths].filter(path => /(^|\/)robots\.txt$/i.test(path));
     const cssImports = count(/@import\b/gi, joined);
     const insecureAssets = [...joined.matchAll(/(?:src|href)\s*=\s*["']http:\/\/[^"']+/gi)].map(match => match[0]);
+    const insecureCanonicalOrSitemap = /<link\b(?=[^>]*\brel\s*=\s*["'][^"']*canonical)[^>]*\bhref\s*=\s*["']http:\/\//i.test(publicJoined) || /<loc>\s*http:\/\//i.test(joined);
     const results = {
       html: [hasHtml, hasHtml ? html.length + " public HTML page(s) audited: " + pageNames : "No eligible public HTML documents were found."],
       title: titleCheck,
@@ -135,9 +136,9 @@
       schema: [test(/application\/ld\+json|itemscope/i, publicJoined), "Structured data patterns searched in public page source."],
       sitemap: [sitemapPaths.length > 0, sitemapPaths.length ? "Found: " + sitemapPaths.join(", ") : "No sitemap XML file found in the repository tree."],
       "robots-file": [robotsPaths.length > 0, robotsPaths.length ? "Found: " + robotsPaths.join(", ") : "No robots.txt found in the repository tree."],
-      https: [insecureAssets.length === 0, insecureAssets.length ? "Insecure HTTP references: " + insecureAssets.slice(0, 5).join("; ") : "No HTTP asset references found in source."],
-      "heading-order": [hasHtml ? html.every(file => /<h1\b/i.test(file.text) && !/<h[3-6]\b[^>]*>[\s\S]{0,160}?<\/h[3-6]>\s*<h[1-2]\b/i.test(file.text)) : null, "Heading markup inspected on: " + pageNames + ". Dynamic headings require live-page verification."],
-      "image-loading": [hasHtml ? imageWithoutHint.length === 0 : null, "Public-page images without an explicit loading/fetch priority hint: " + imageWithoutHint.length + ". Hero/above-the-fold images should normally use eager/high priority; below-the-fold images should use lazy loading."],
+      https: [!insecureCanonicalOrSitemap, insecureCanonicalOrSitemap ? "An HTTP canonical or sitemap URL was found; use HTTPS." : "Canonical and sitemap URLs use HTTPS or no insecure URL was found."],
+      "heading-order": [!hasHtml ? null : h1Missing.length && h1Missing.every(file => h1Dynamic.includes(file)) ? null : html.every(file => /<h1\b/i.test(file.text) && !/<h[3-6]\b[^>]*>[\s\S]{0,160}?<\/h[3-6]>\s*<h[1-2]\b/i.test(file.text)), "Heading markup inspected on: " + pageNames + ". Dynamic headings require live-page verification."],
+      "image-loading": [!hasHtml ? null : imageTags.length === 0 ? true : imageWithoutHint.length === 0 ? true : null, "Public-page images: " + imageTags.length + "; without an explicit loading/fetch priority hint: " + imageWithoutHint.length + ". Missing hints are UNKNOWN because source code alone cannot determine whether an image is above or below the fold. Use eager/high priority for the hero image and lazy loading for below-the-fold images."],
       "css-imports": [cssImports <= 2, cssImports + " CSS @import statement(s) found across scanned source files."],
       "mixed-content": [insecureAssets.length === 0, insecureAssets.length ? insecureAssets.length + " HTTP asset reference(s) found." : "No insecure HTTP asset references found."],
       "social-image": perPage(/property\s*=\s*["']og:image["']/i, "social sharing image")
