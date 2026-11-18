@@ -31,6 +31,42 @@
       if (check.evidence) { const evidence = document.createElement("span"); evidence.className = "check-evidence"; evidence.textContent = check.evidence; body.append(evidence); }
       const badge = document.createElement("span"); badge.className = "result-status"; badge.textContent = check.status; row.append(icon, body, badge); list.append(row);
     });
+
+    const panel=$("offpage-panel"), evidenceList=$("offpage-results");
+    if(panel&&evidenceList){
+      panel.hidden=false;evidenceList.replaceChildren();
+      const evidence=report.offPageEvidence||{candidates:[],errors:[]};
+      if(!evidence.candidates.length){
+        const empty=document.createElement("p");empty.className="offpage-empty";
+        empty.textContent="No external search candidates were returned. This does not mean that no mentions or backlinks exist.";
+        evidenceList.append(empty);
+      }
+      evidence.candidates.forEach(candidate=>{
+        const card=document.createElement("article");card.className="offpage-source";
+        const copy=document.createElement("div");copy.className="offpage-source-copy";
+        const title=document.createElement("strong");title.textContent=candidate.title||candidate.host;
+        const link=document.createElement("a");link.href=candidate.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent=candidate.host;
+        const desc=document.createElement("p");desc.textContent=candidate.description||candidate.query;
+        copy.append(title,link,desc);
+        const action=document.createElement("button");action.type="button";action.className="verify-source";
+        action.textContent=candidate.verification?(candidate.verification.passed?"Verified":"Retry verification"):"Verify source";
+        action.addEventListener("click",async()=>{
+          action.disabled=true;action.textContent="Checking…";
+          try{const result=await verifyOffPageCandidate(candidate,report);updateOffPageCandidate(candidate,result,report);}
+          catch(error){action.disabled=false;action.textContent="Retry verification";const note=document.createElement("p");note.className="offpage-error";note.textContent=error.message||"Could not verify this page.";card.append(note);}
+        });
+        card.append(copy,action);
+        if(candidate.verification){
+          const status=document.createElement("p");status.className=candidate.verification.passed?"offpage-verified":"offpage-error";
+          status.textContent=candidate.verification.detail||"Verification complete.";card.append(status);
+        }
+        evidenceList.append(card);
+      });
+      if(evidence.errors&&evidence.errors.length){
+        const note=document.createElement("p");note.className="offpage-error";
+        note.textContent="Some searches could not be completed: "+evidence.errors.join(" · ");evidenceList.append(note);
+      }
+    }
     $("report-note").textContent = report.note;
     try { localStorage.setItem("do2earn-seo-bot:last-report-v3:" + report.projectId, JSON.stringify(report)); } catch (_) {}
   }
