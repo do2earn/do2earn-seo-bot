@@ -9,6 +9,8 @@ Automated source-code SEO checks for Do2Earn projects.
 - Off-page SEO is intentionally disabled.
 - No database, Cloudflare Worker, or paid SEO API is required.
 - Every audit recalculates the checks from the repositories' public source files. The latest report is cached only in the browser's LocalStorage.
+- Audit outcomes are `PASS`, `FAIL`, `UNKNOWN`, or `N/A`. `UNKNOWN` is excluded from the verified score and remains visible in coverage; `N/A` is excluded from both the score and applicable-check denominator.
+- Hreflang is marked `N/A` when no multilingual or regional variants are detected. Image-loading checks only pass/fail images whose hero or below-the-fold role is explicit in source; ambiguous image positions remain `UNKNOWN`.
 
 ## Open the published bot
 
