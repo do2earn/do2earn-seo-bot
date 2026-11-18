@@ -1,0 +1,43 @@
+name: Generate SEO file manifests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: seo-file-manifests
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out SEO Bot
+        uses: actions/checkout@v4
+
+      - name: Check out public project repositories
+        run: |
+          git clone --depth 1 --branch main https://github.com/do2earn/steemflags.git ../steemflags
+          git clone --depth 1 --branch main https://github.com/do2earn/steemgames.git ../steemgames
+
+      - name: Generate file manifests
+        env:
+          STEEM_FLAGS_DIR: ../steemflags
+          STEEM_GAMES_DIR: ../steemgames
+        run: node scripts/generate-manifests.mjs
+
+      - name: Commit updated manifests
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public-manifests/*.json
+          if git diff --cached --quiet; then
+            echo "File manifests are already up to date."
+          else
+            git commit -m "Update public SEO file manifests"
+            git push
+          fi
