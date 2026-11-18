@@ -37,7 +37,7 @@ jobs:
           TARGET="website/do2earn-seo-bot"
           mkdir -p "$TARGET/public-manifests"
           cp index.html style.css script.js seo-checklist.json "$TARGET/"
-          if [ -d public-manifests ]; then cp -R public-manifests "$TARGET/"; fi
+          if [ -d public-manifests ]; then cp public-manifests/*.json "$TARGET/public-manifests/"; fi
           cd website
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
