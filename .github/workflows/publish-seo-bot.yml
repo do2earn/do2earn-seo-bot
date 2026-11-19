@@ -7,50 +7,47 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: seo-bot-pages
+  cancel-in-progress: true
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    env:
-      SITE_DEPLOY_TOKEN: ${{ secrets.SITE_DEPLOY_TOKEN }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out SEO Bot source
         uses: actions/checkout@v4
 
       - name: Validate SEO bot source and checklists
         run: |
+          set -euo pipefail
           node --check script.js
           node -e "JSON.parse(require('fs').readFileSync('on-page-checklist.json','utf8')); JSON.parse(require('fs').readFileSync('off-page-checklist.json','utf8')); const k=JSON.parse(require('fs').readFileSync('keywords/steemgames.json','utf8')); if(k.projectId!=='steem-games'||!Array.isArray(k.keywords)||!k.pages) process.exit(1); console.log('SEO source, checklists and keyword strategy are valid.')"
 
-      - name: Explain missing deployment token
-        if: env.SITE_DEPLOY_TOKEN == ''
-        run: echo 'SITE_DEPLOY_TOKEN is not configured. Source files are saved; automatic publishing is skipped.'
-
-      - name: Check out the Do2Earn website
-        if: env.SITE_DEPLOY_TOKEN != ''
-        uses: actions/checkout@v4
-        with:
-          repository: do2earn/do2earn.github.io
-          ref: main
-          token: ${{ secrets.SITE_DEPLOY_TOKEN }}
-          path: website
-
-      - name: Sync SEO Bot to the website subdirectory
-        if: env.SITE_DEPLOY_TOKEN != ''
+      - name: Prepare standalone Pages artifact
         run: |
           set -euo pipefail
-          TARGET="website/do2earn-seo-bot"
-          mkdir -p "$TARGET/public-manifests" "$TARGET/keywords"
-          cp index.html style.css script.js on-page-checklist.json off-page-checklist.json "$TARGET/"
-          cp keywords/steemgames.json "$TARGET/keywords/"
-          if [ -d public-manifests ]; then cp public-manifests/*.json "$TARGET/public-manifests/"; fi
-          cd website
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A do2earn-seo-bot/
-          if git diff --cached --quiet; then
-            echo 'No website changes to publish.'
-          else
-            git commit -m 'Deploy Do2Earn SEO Bot'
-            git push origin main
-          fi
+          rm -rf _site
+          mkdir -p _site/keywords _site/public-manifests
+          cp index.html style.css script.js on-page-checklist.json off-page-checklist.json _site/
+          cp keywords/steemgames.json _site/keywords/
+          cp -R public-manifests/. _site/public-manifests/
+          touch _site/.nojekyll
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Deploy SEO Bot
+        id: deployment
+        uses: actions/deploy-pages@v4
