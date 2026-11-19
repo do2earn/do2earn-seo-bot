@@ -8,27 +8,37 @@ Automated source-code SEO checks for Do2Earn projects.
 - Projects currently configured: [Steem Flags](https://steemflags.do2earn.dev) and [Steem Games](https://steemgames.do2earn.dev).
 - On-page and technical checks are defined in `on-page-checklist.json`.
 - Off-page checks are defined separately in `off-page-checklist.json`. The audit discovers candidate references through public web search and verifies selected source pages with the Jina Reader service. Search discovery is not an exhaustive backlink index.
-- No database, Cloudflare Worker, or paid SEO API is required.
-- Every audit recalculates the checks from the repositories' public source files. The latest report is cached only in the browser's LocalStorage.
+- No database or paid SEO API is required.
+- Every audit recalculates the checks from the projects' public source files. The latest report is cached only in the browser's LocalStorage.
 - Audit outcomes are `PASS`, `FAIL`, `UNKNOWN`, or `N/A`. `UNKNOWN` is excluded from the verified score and remains visible in coverage; `N/A` is excluded from both the score and applicable-check denominator.
 - Hreflang is marked `N/A` when no multilingual or regional variants are detected. Image-loading checks only pass/fail images whose hero or below-the-fold role is explicit in source; ambiguous image positions remain `UNKNOWN`.
 
-## Open the published bot
+## Production deployment
 
 **Production URL:** https://do2earn.dev/do2earn-seo-bot/
 
-The source of truth is this repository. The public website is served by `do2earn/do2earn.github.io`; GitHub Pages cannot mount this repository at an arbitrary sub-path by itself. The included GitHub Actions workflow syncs the four runtime files (`index.html`, `style.css`, `script.js`, `on-page-checklist.json`, and `off-page-checklist.json`) into the `do2earn-seo-bot/` directory of the website repository.
+This repository is the sole source of truth for the SEO Bot. GitHub Actions builds the static runtime bundle from this repository and deploys it directly to a Cloudflare Worker. The Worker serves the bot only under `/do2earn-seo-bot/*` on `do2earn.dev`.
 
-## Enable automatic publishing
+The deployment does not check out, modify, or push to `do2earn/do2earn.github.io`. It does not require `SITE_DEPLOY_TOKEN`.
 
-In this repository, open **Settings → Secrets and variables → Actions** and add:
+### One-time setup
 
-- **Name:** `SITE_DEPLOY_TOKEN`
-- **Value:** a fine-grained GitHub Personal Access Token for the `do2earn` account, restricted to the `do2earn/do2earn.github.io` repository, with **Contents: Read and write** permission.
+In this repository, open **Settings → Secrets and variables → Actions → New repository secret** and add:
 
-The workflow safely skips deployment until this secret exists. After adding it, run **Actions → Publish SEO Bot → Run workflow** once. Future pushes to `main` will publish automatically.
+- **Name:** `CLOUDFLARE_API_TOKEN`
+- **Value:** a Cloudflare API token authorized for this account and zone, with **Workers Scripts: Edit** and **Workers Routes: Edit** permissions for the `do2earn.dev` zone. The token must also be able to upload Worker assets.
 
-The workflow creates/updates only `do2earn-seo-bot/` in the website repository. It does not change the website's `CNAME` or other site files.
+The Cloudflare account ID is already configured in `wrangler.toml` and the workflow. After adding the secret, run **Actions → Deploy SEO Bot → Run workflow** once. Future pushes to `main` automatically build and deploy the latest version.
+
+### Deployment contents
+
+The workflow validates JavaScript and JSON, then packages:
+- `index.html`, `style.css`, and `script.js`
+- `on-page-checklist.json` and `off-page-checklist.json`
+- `keywords/steemgames.json`
+- `public-manifests/*.json`
+
+The Worker rewrites the public URL prefix before serving these assets, so relative URLs continue to work at the production subpath. Only requests under `/do2earn-seo-bot/` are handled by this Worker.
 
 ## Run locally
 
