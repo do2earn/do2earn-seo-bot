@@ -5,18 +5,30 @@
   "website": "https://steemgames.do2earn.dev/",
   "language": "en",
   "sourceFile": "keywords/steemgames.json",
-  "description": "Configured keyword targets for the Steem Games On-Page SEO audit. This file does not contain search-volume or ranking data.",
+  "description": "Page-specific keyword targets for the four public Steem Games pages. Targets are based on each page's actual subject and current source content; they are not search-volume or ranking data.",
   "keywords": [
     {
       "term": "Steem Games",
       "group": "brand_and_directory"
     },
     {
-      "term": "Web3 Games",
+      "term": "Steem Games Directory",
+      "group": "brand_and_directory"
+    },
+    {
+      "term": "Steem Gaming Directory",
+      "group": "brand_and_directory"
+    },
+    {
+      "term": "Steem Blockchain Games",
       "group": "gaming_categories"
     },
     {
       "term": "Blockchain Games",
+      "group": "gaming_categories"
+    },
+    {
+      "term": "Web3 Games",
       "group": "gaming_categories"
     },
     {
@@ -28,23 +40,7 @@
       "group": "gaming_categories"
     },
     {
-      "term": "Web3 Game",
-      "group": "gaming_categories"
-    },
-    {
-      "term": "Blockchain Game",
-      "group": "gaming_categories"
-    },
-    {
-      "term": "Play to Earn Game",
-      "group": "gaming_categories"
-    },
-    {
       "term": "Steem Gaming",
-      "group": "gaming_topics"
-    },
-    {
-      "term": "Web3 Gaming",
       "group": "gaming_topics"
     },
     {
@@ -52,24 +48,48 @@
       "group": "gaming_topics"
     },
     {
+      "term": "Web3 Gaming",
+      "group": "gaming_topics"
+    },
+    {
       "term": "Play to Earn Gaming",
       "group": "gaming_topics"
     },
     {
-      "term": "Steem Gaming Directory",
-      "group": "brand_and_directory"
+      "term": "Steem Games FAQ",
+      "group": "support_and_help"
     },
     {
-      "term": "Steem Games Directory",
-      "group": "brand_and_directory"
+      "term": "Steem Game Rankings",
+      "group": "support_and_help"
     },
     {
-      "term": "Steem",
+      "term": "D2E Rewards",
+      "group": "rewards"
+    },
+    {
+      "term": "Steem Keychain",
+      "group": "account_and_access"
+    },
+    {
+      "term": "Steem Posting Key",
+      "group": "account_and_access"
+    },
+    {
+      "term": "Steem Blockchain",
       "group": "ecosystem"
     },
     {
-      "term": "SBD",
-      "group": "ecosystem"
+      "term": "Game Developer Information",
+      "group": "game_discovery"
+    },
+    {
+      "term": "Game Statistics",
+      "group": "game_discovery"
+    },
+    {
+      "term": "Game Details",
+      "group": "game_discovery"
     },
     {
       "term": "Play to Earn",
@@ -86,67 +106,83 @@
     {
       "term": "Play 4 Steem",
       "group": "earning"
+    },
+    {
+      "term": "SBD",
+      "group": "ecosystem"
     }
   ],
   "pages": {
     "index.html": {
       "primary": "Steem Games",
+      "intent": "Main directory and discovery page for games built on the Steem blockchain.",
       "supporting": [
-        "Web3 Games",
-        "Blockchain Games",
-        "Play to Earn Games",
-        "Steem Gaming Directory",
         "Steem Games Directory",
-        "Steem",
-        "SBD",
-        "Play to Earn",
-        "P2E",
-        "Play for Steem",
-        "Play 4 Steem"
+        "Steem Blockchain Games",
+        "Steem Gaming",
+        "Blockchain Games",
+        "Web3 Games",
+        "game rankings",
+        "game statistics",
+        "game developers",
+        "discover Steem games",
+        "Play to Earn Games",
+        "D2E Rewards"
       ],
       "urlKeywords": []
     },
     "about.html": {
-      "primary": "Steem Gaming Directory",
+      "primary": "About Steem Games",
+      "intent": "Explains the purpose, mission, community participation and ownership of the Steem Games directory.",
       "supporting": [
-        "Steem Games",
-        "Steem Gaming",
-        "Web3 Gaming",
-        "Blockchain Gaming"
+        "Steem Games Directory",
+        "Steem Gaming Directory",
+        "Steem blockchain gaming",
+        "discover Steem games",
+        "Steem gaming community",
+        "Do2Earn gaming project",
+        "Web3 gaming"
       ],
       "urlKeywords": []
     },
     "faq.html": {
-      "primary": "Play to Earn Games",
+      "primary": "Steem Games",
+      "intent": "Answers practical questions about the directory, game rankings, D2E rewards, voting and account access. The FAQ-specific phrase is a supporting target to distinguish this page's help intent from the homepage.",
       "supporting": [
-        "Play to Earn",
-        "P2E",
-        "Play for Steem",
-        "Play 4 Steem",
-        "SBD",
-        "Steem"
+        "Steem Games FAQ",
+        "Steem game rankings",
+        "D2E Rewards",
+        "how to vote on Steem Games",
+        "Steem Keychain",
+        "Steem Posting Key",
+        "Steem account login",
+        "game points calculation",
+        "Steem blockchain games"
       ],
       "urlKeywords": []
     },
     "game-info.html": {
       "primary": "Steem Game",
+      "intent": "Game-specific detail page template for game information, developer details, dedicated tags, genres, statistics and external play links. Game content and headings are populated dynamically from the API.",
       "supporting": [
-        "Web3 Game",
+        "Steem Game Details",
+        "Steem game developer",
+        "game statistics",
+        "game genres",
+        "dedicated Steem tag",
+        "play Steem games",
         "Blockchain Game",
-        "Play to Earn Game",
-        "Web3 Gaming",
-        "Blockchain Gaming",
-        "Play to Earn Gaming",
-        "Steem"
+        "Web3 Game",
+        "Play to Earn Game"
       ],
       "urlKeywords": []
     }
   },
   "usage": {
-    "primaryKeyword": "Use exactly one primary keyword per page.",
-    "supportingKeywords": "Supporting terms are contextual suggestions and are not all required to appear.",
-    "url": "URL checks run only when urlKeywords are explicitly configured for a page. Dynamic query-string routes cannot be validated from a static filename.",
-    "density": "A density above 3% is only an advisory heuristic, not a search-engine ranking threshold.",
-    "limitations": "The audit checks source text only. It does not measure search volume, keyword difficulty, search intent, rankings, or Google indexing."
+    "primaryKeyword": "Use one page-specific primary phrase. Avoid assigning the same broad commercial phrase to multiple pages unless the page intent genuinely overlaps.",
+    "supportingKeywords": "Supporting phrases describe secondary subtopics and search intents. They are contextual guidance only; the current seven keyword checks evaluate the primary phrase, not every supporting phrase independently.",
+    "url": "URL checks run only when urlKeywords are explicitly configured. Keep this empty where the current URL is a generic filename or a dynamic query-string route.",
+    "density": "Estimated exact-phrase density is a diagnostic only. A density above 3% is not a Google ranking threshold and should trigger editorial review, not automatic keyword stuffing.",
+    "limitations": "This strategy is based on current public source content, not search-volume, competition, ranking or indexing data. game-info.html loads game-specific content and its H1 dynamically; source-only checks cannot fully evaluate the rendered page."
   }
 }
