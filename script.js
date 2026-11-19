@@ -302,16 +302,16 @@
       const h1 = doc.querySelector("h1")?.textContent || "";
       const description = doc.querySelector('meta[name="description"]')?.getAttribute("content") || "";
       const sourceText = h1 || title;
-      const tokens = (sourceText.toLocaleLowerCase().match(/[\\p{L}\\p{N}]+/gu) || []).filter(word => !keywordStopWords.has(word));
+      const tokens = (sourceText.toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) || []).filter(word => !keywordStopWords.has(word));
       const phrase = tokens.slice(0, Math.min(3, tokens.length)).join(" ");
-      const normalize = value => (value || "").toLocaleLowerCase().match(/[\\p{L}\\p{N}]+/gu)?.join(" ") || "";
-      const phrasePattern = phrase ? new RegExp("(^| )" + phrase.split(" ").map(word => word.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\    const pageMeta = parsedPages.map(x => ({path:x.file.path,title:x.doc.querySelector("title")?.textContent.trim()||"",description:x.doc.querySelector('meta[name="description"]')?.getAttribute("content")?.trim()||""}));")).join(" ") + "( |$)", "g") : null;
+      const normalize = value => (value || "").toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu)?.join(" ") || "";
+      const phrasePattern = phrase ? new RegExp("(^| )" + phrase + "( |$)", "g") : null;
       const body = doc.body?.textContent || "";
       const normalizedBody = normalize(body);
       const occurrences = phrasePattern ? (normalizedBody.match(phrasePattern) || []).length : 0;
       const wordCount = normalizedBody ? normalizedBody.split(" ").length : 0;
       const density = wordCount ? occurrences / wordCount * 100 : 0;
-      let pathText = file.path.toLocaleLowerCase().replace(/\\.[a-z0-9]+$/i, "").replace(/[-_]/g, " ");
+      let pathText = file.path.toLocaleLowerCase().replace(/\.[a-z0-9]+$/i, "").replace(/[-_]/g, " ");
       try { pathText = decodeURIComponent(pathText); } catch (_) {}
       return {path:file.path,phrase,title:normalize(title),h1:normalize(h1),description:normalize(description),url:normalize(pathText),body:normalizedBody,occurrences,wordCount,density,hasH1:!!h1};
     });
