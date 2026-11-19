@@ -294,6 +294,38 @@
 
     const parsedPages = html.map(file => ({ file, doc: new DOMParser().parseFromString(file.text, "text/html") }));
     const pageMeta = parsedPages.map(x => ({path:x.file.path,title:x.doc.querySelector("title")?.textContent.trim()||"",description:x.doc.querySelector('meta[name="description"]')?.getAttribute("content")?.trim()||""}));
+    // Infer a page topic phrase from its H1 (title fallback), then inspect its on-page placement.
+    // This is a source-code heuristic, not keyword-volume or live search-intent research.
+    const keywordStopWords = new Set(("a an and are as at be by for from in into is it of on or the to with your our welcome home official").split(" "));
+    const keywordPages = parsedPages.map(({file,doc}) => {
+      const title = doc.querySelector("title")?.textContent || "";
+      const h1 = doc.querySelector("h1")?.textContent || "";
+      const description = doc.querySelector('meta[name="description"]')?.getAttribute("content") || "";
+      const sourceText = h1 || title;
+      const tokens = (sourceText.toLocaleLowerCase().match(/[\\p{L}\\p{N}]+/gu) || []).filter(word => !keywordStopWords.has(word));
+      const phrase = tokens.slice(0, Math.min(3, tokens.length)).join(" ");
+      const normalize = value => (value || "").toLocaleLowerCase().match(/[\\p{L}\\p{N}]+/gu)?.join(" ") || "";
+      const phrasePattern = phrase ? new RegExp("(^| )" + phrase.split(" ").map(word => word.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\    const pageMeta = parsedPages.map(x => ({path:x.file.path,title:x.doc.querySelector("title")?.textContent.trim()||"",description:x.doc.querySelector('meta[name="description"]')?.getAttribute("content")?.trim()||""}));")).join(" ") + "( |$)", "g") : null;
+      const body = doc.body?.textContent || "";
+      const normalizedBody = normalize(body);
+      const occurrences = phrasePattern ? (normalizedBody.match(phrasePattern) || []).length : 0;
+      const wordCount = normalizedBody ? normalizedBody.split(" ").length : 0;
+      const density = wordCount ? occurrences / wordCount * 100 : 0;
+      let pathText = file.path.toLocaleLowerCase().replace(/\\.[a-z0-9]+$/i, "").replace(/[-_]/g, " ");
+      try { pathText = decodeURIComponent(pathText); } catch (_) {}
+      return {path:file.path,phrase,title:normalize(title),h1:normalize(h1),description:normalize(description),url:normalize(pathText),body:normalizedBody,occurrences,wordCount,density,hasH1:!!h1};
+    });
+    const keywordApplicable = keywordPages.filter(page => page.phrase);
+    const keywordSummary = (key, label) => {
+      if (!hasHtml) return [null, "No eligible public HTML documents were found."];
+      if (!keywordApplicable.length) return [null, "No usable topic phrase could be inferred from page H1 or title text."];
+      const missing = keywordApplicable.filter(page => !page[key].includes(page.phrase));
+      return [missing.length === 0, missing.length
+        ? "Inferred topic phrase missing from " + label + " on: " + missing.map(page => page.path + ' ("' + page.phrase + '")').join(", ")
+        : "Inferred topic phrase found in " + label + " on all audited pages."];
+    };
+    const keywordDensityIssues = keywordApplicable.filter(page => !page.wordCount || !page.occurrences || page.density > 3);
+
     const duplicateValues = key => {const grouped=new Map();pageMeta.filter(x=>x[key]).forEach(x=>{const v=x[key].toLocaleLowerCase();grouped.set(v,[...(grouped.get(v)||[]),x.path]);});return [...grouped.values()].filter(g=>g.length>1);};
     const titleDup=duplicateValues("title"),descDup=duplicateValues("description");
     const titleLong=pageMeta.filter(x=>x.title&&(x.title.length<15||x.title.length>70));
@@ -333,6 +365,14 @@
     const missingLandmarks=parsedPages.filter(x=>!x.doc.querySelector("main")||!x.doc.querySelector("nav"));
     const incompleteOg=parsedPages.filter(x=>!x.doc.querySelector('meta[property="og:description"]')||!x.doc.querySelector('meta[property="og:type"]')||!x.doc.querySelector('meta[property="og:url"]'));
     const extra={
+      "keyword-target":[!hasHtml?null:keywordApplicable.length===html.length,keywordApplicable.length+" of "+html.length+" page(s) have an inferred topic phrase from H1/title. Phrases are heuristic suggestions, not verified target keywords."],
+      "keyword-title":[!hasHtml?null:keywordSummary("title","page title")[0],keywordSummary("title","page title")[1]],
+      "keyword-description":[!hasHtml?null:keywordSummary("description","meta description")[0],keywordSummary("description","meta description")[1]],
+      "keyword-url":[!hasHtml?null:keywordSummary("url","URL slug")[0],keywordSummary("url","URL slug")[1]],
+      "keyword-content":[!hasHtml?null:keywordSummary("body","visible page content")[0],keywordSummary("body","visible page content")[1]],
+      "keyword-density":[!hasHtml?null:!keywordApplicable.length?null:keywordDensityIssues.length===0,keywordApplicable.length?keywordDensityIssues.length
+        ? "Potential keyword-use issue: "+keywordDensityIssues.map(page=>page.path+" ("+page.occurrences+" occurrence(s), "+page.density.toFixed(2)+"% estimated density)").join("; ")+". This is an advisory heuristic, not a Google ranking threshold."
+        : "No obvious repetition issue detected; estimated exact-phrase density is at or below 3%. Density alone is not a ranking factor.":"No inferred topic phrases available."],
       "title-length":[!hasHtml?null:titleLong.length===0,titleLong.length?"Titles outside advisory 15–70 characters: "+titleLong.map(x=>x.path+" ("+x.title.length+")").join(", "):"Available titles fall within advisory 15–70 character range."],
       "title-unique":[!hasHtml?null:titleDup.length===0,titleDup.length?"Duplicate titles: "+titleDup.map(x=>x.join(", ")).join("; "):"No duplicate static titles detected."],
       "description-length":[!hasHtml?null:pageMeta.every(x=>!x.description)?null:descLong.length===0,descLong.length?"Descriptions outside advisory 50–160 characters: "+descLong.map(x=>x.path+" ("+x.description.length+")").join(", "):"Available descriptions fall within advisory range."],
