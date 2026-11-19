@@ -295,7 +295,7 @@
     const parsedPages = html.map(file => ({ file, doc: new DOMParser().parseFromString(file.text, "text/html") }));
     const pageMeta = parsedPages.map(x => ({path:x.file.path,title:x.doc.querySelector("title")?.textContent.trim()||"",description:x.doc.querySelector('meta[name="description"]')?.getAttribute("content")?.trim()||""}));
     // Use a project-specific keyword strategy when supplied; retain H1/title inference for projects without one.
-    const normalizeKeyword = value => (value || "").toLocaleLowerCase().match(/[\\p{L}\\p{N}]+/gu)?.join(" ") || "";
+    const normalizeKeyword = value => (value || "").toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu)?.join(" ") || "";
     const countPhrase = (text, phrase) => {
       if (!phrase) return 0;
       const haystack = " " + normalizeKeyword(text) + " ";
@@ -312,7 +312,7 @@
       const phrase = target?.primary || "";
       const normalize = normalizeKeyword;
       const bodyText = doc.body?.textContent || "";
-      let pathText = file.path.toLocaleLowerCase().replace(/\\.[a-z0-9]+$/i, "").replace(/[-_]/g, " ");
+      let pathText = file.path.toLocaleLowerCase().replace(/\.[a-z0-9]+$/i, "").replace(/[-_]/g, " ");
       try { pathText = decodeURIComponent(pathText); } catch (_) {}
       const urlTerms = Array.isArray(target?.urlKeywords) ? target.urlKeywords : [];
       const wordCount = normalize(bodyText).split(" ").filter(Boolean).length;
