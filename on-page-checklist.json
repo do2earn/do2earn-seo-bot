@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "title": "Do2Earn On-Page & Technical SEO Checklist",
   "scope": {
     "onPage": true,
@@ -157,6 +157,42 @@
       "category": "Social SEO",
       "title": "Social sharing image",
       "description": "Open Graph image metadata is present."
+    },
+    {
+      "id": "keyword-target",
+      "category": "Keyword Analysis",
+      "title": "Primary topic phrase identification",
+      "description": "Infers a candidate topic phrase from each public page H1 (title fallback). This is a source heuristic, not search-volume research."
+    },
+    {
+      "id": "keyword-title",
+      "category": "Keyword Analysis",
+      "title": "Topic phrase in page title",
+      "description": "Checks whether the inferred page topic phrase appears in the HTML title."
+    },
+    {
+      "id": "keyword-description",
+      "category": "Keyword Analysis",
+      "title": "Topic phrase in meta description",
+      "description": "Checks whether the inferred page topic phrase appears in the meta description."
+    },
+    {
+      "id": "keyword-url",
+      "category": "Keyword Analysis",
+      "title": "Topic phrase in URL",
+      "description": "Checks whether the inferred page topic phrase appears in the public page URL slug."
+    },
+    {
+      "id": "keyword-content",
+      "category": "Keyword Analysis",
+      "title": "Topic phrase in page content",
+      "description": "Checks whether the inferred page topic phrase appears in the page's extracted body text."
+    },
+    {
+      "id": "keyword-density",
+      "category": "Keyword Analysis",
+      "title": "Keyword repetition review",
+      "description": "Flags absent or unusually repeated exact topic phrases using a conservative 3% advisory heuristic; keyword density is not a direct Google ranking factor."
     },
     {
       "id": "title-length",
