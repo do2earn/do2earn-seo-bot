@@ -20,7 +20,7 @@ jobs:
       - name: Validate SEO bot source and checklists
         run: |
           node --check script.js
-          node -e "JSON.parse(require('fs').readFileSync('on-page-checklist.json','utf8')); JSON.parse(require('fs').readFileSync('off-page-checklist.json','utf8')); console.log('SEO source and checklist JSON are valid.')"
+          node -e "JSON.parse(require('fs').readFileSync('on-page-checklist.json','utf8')); JSON.parse(require('fs').readFileSync('off-page-checklist.json','utf8')); const k=JSON.parse(require('fs').readFileSync('keywords/steemgames.json','utf8')); if(k.projectId!=='steem-games'||!Array.isArray(k.keywords)||!k.pages) process.exit(1); console.log('SEO source, checklists and keyword strategy are valid.')"
 
       - name: Explain missing deployment token
         if: env.SITE_DEPLOY_TOKEN == ''
@@ -40,8 +40,9 @@ jobs:
         run: |
           set -euo pipefail
           TARGET="website/do2earn-seo-bot"
-          mkdir -p "$TARGET/public-manifests"
+          mkdir -p "$TARGET/public-manifests" "$TARGET/keywords"
           cp index.html style.css script.js on-page-checklist.json off-page-checklist.json "$TARGET/"
+          cp keywords/steemgames.json "$TARGET/keywords/"
           if [ -d public-manifests ]; then cp public-manifests/*.json "$TARGET/public-manifests/"; fi
           cd website
           git config user.name 'github-actions[bot]'
