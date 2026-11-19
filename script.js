@@ -309,7 +309,10 @@
       const h1Text = doc.querySelector("h1")?.textContent || "";
       const descriptionText = doc.querySelector('meta[name="description"]')?.getAttribute("content") || "";
       const target = keywordConfig?.pages?.[file.path] || keywordConfig?.defaultPage || null;
-      const phrase = target?.primary || "";
+      const keywordStopWords = new Set(("a an and are as at be by for from in into is it of on or the to with your our welcome home official").split(" "));
+      const inferredSource = h1Text || titleText;
+      const inferredTokens = (inferredSource.toLocaleLowerCase().match(/[\\p{L}\\p{N}]+/gu) || []).filter(word => !keywordStopWords.has(word));
+      const phrase = target?.primary || (!keywordConfig ? inferredTokens.slice(0, Math.min(3, inferredTokens.length)).join(" ") : "");
       const normalize = normalizeKeyword;
       const bodyText = doc.body?.textContent || "";
       let pathText = file.path.toLocaleLowerCase().replace(/\.[a-z0-9]+$/i, "").replace(/[-_]/g, " ");
