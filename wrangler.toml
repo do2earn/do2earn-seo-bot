@@ -1,0 +1,14 @@
+name = "do2earn-seo-bot"
+main = "worker.js"
+compatibility_date = "2026-11-19"
+account_id = "d334e3c238734436efc92cf3b63c311f"
+workers_dev = false
+
+routes = [
+  { pattern = "do2earn.dev/do2earn-seo-bot", zone_name = "do2earn.dev" },
+  { pattern = "do2earn.dev/do2earn-seo-bot/*", zone_name = "do2earn.dev" }
+]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
