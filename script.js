@@ -439,7 +439,28 @@
       "mixed-content": [insecureAssets.length === 0, insecureAssets.length ? insecureAssets.length + " HTTP asset reference(s) found." : "No insecure HTTP asset references found."],
       "social-image": perPage(/property\s*=\s*["']og:image["']/i, "social sharing image")
     };
-    return rules.checks.map(rule => {
+    // Older deployed checklist copies may not yet contain the seven keyword checks.
+    // Keep the scanner backward-compatible by supplying the canonical definitions when absent.
+    const keywordFallbackRules = [
+      { id: "keyword-target", category: "Keyword Analysis", title: "Primary topic phrase identification", description: "Loads the configured page-specific primary keyword from the selected project's keyword JSON file." },
+      { id: "keyword-title", category: "Keyword Analysis", title: "Topic phrase in page title", description: "Checks the configured primary keyword in each applicable page title." },
+      { id: "keyword-description", category: "Keyword Analysis", title: "Topic phrase in meta description", description: "Checks the configured primary keyword in each applicable meta description." },
+      { id: "keyword-url", category: "Keyword Analysis", title: "Topic phrase in URL", description: "Checks explicitly configured URL keyword targets; pages without URL targets are not penalized." },
+      { id: "keyword-content", category: "Keyword Analysis", title: "Topic phrase in page content", description: "Checks the configured primary keyword in visible source content." },
+      { id: "keyword-density", category: "Keyword Analysis", title: "Keyword repetition review", description: "Reviews exact primary-keyword repetition using a conservative advisory heuristic; density is not a direct ranking factor." },
+      { id: "keyword-h1", category: "Keyword Analysis", title: "Primary keyword in H1", description: "Checks whether each configured primary keyword appears in the page's H1 heading." }
+    ];
+    const auditRules = Array.isArray(rules.checks) ? rules.checks.slice() : [];
+    const existingRuleIds = new Set(auditRules.map(rule => rule.id));
+    const missingKeywordRules = keywordFallbackRules.filter(rule => !existingRuleIds.has(rule.id));
+    if (missingKeywordRules.length) {
+      const afterKeywordGroup = auditRules.findIndex(rule =>
+        rule.category === "Keyword Analysis" || rule.id === "title-length"
+      );
+      const insertAt = afterKeywordGroup < 0 ? auditRules.length : afterKeywordGroup;
+      auditRules.splice(insertAt, 0, ...missingKeywordRules);
+    }
+    return auditRules.map(rule => {
       const result = results[rule.id];
       if (!result) return { ...rule, status: "UNKNOWN", detail: "This check is not implemented in the current scanner." };
       const status = result[0] === "N/A" ? "N/A" : result[0] === null ? "UNKNOWN" : result[0] ? "PASS" : "FAIL";
