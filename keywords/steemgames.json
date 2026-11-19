@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "projectId": "steem-games",
+  "projectName": "Steem Games",
+  "website": "https://steemgames.do2earn.dev/",
+  "language": "en",
+  "sourceFile": "keywords/steemgames.json",
+  "description": "Configured keyword targets for the Steem Games On-Page SEO audit. This file does not contain search-volume or ranking data.",
+  "keywords": [
+    {
+      "term": "Steem Games",
+      "group": "brand_and_directory"
+    },
+    {
+      "term": "Web3 Games",
+      "group": "gaming_categories"
+    },
+    {
+      "term": "Blockchain Games",
+      "group": "gaming_categories"
+    },
+    {
+      "term": "Play to Earn Games",
+      "group": "gaming_categories"
+    },
+    {
+      "term": "Steem Game",
+      "group": "gaming_categories"
+    },
+    {
+      "term": "Web3 Game",
+      "group": "gaming_categories"
+    },
+    {
+      "term": "Blockchain Game",
+      "group": "gaming_categories"
+    },
+    {
+      "term": "Play to Earn Game",
+      "group": "gaming_categories"
+    },
+    {
+      "term": "Steem Gaming",
+      "group": "gaming_topics"
+    },
+    {
+      "term": "Web3 Gaming",
+      "group": "gaming_topics"
+    },
+    {
+      "term": "Blockchain Gaming",
+      "group": "gaming_topics"
+    },
+    {
+      "term": "Play to Earn Gaming",
+      "group": "gaming_topics"
+    },
+    {
+      "term": "Steem Gaming Directory",
+      "group": "brand_and_directory"
+    },
+    {
+      "term": "Steem Games Directory",
+      "group": "brand_and_directory"
+    },
+    {
+      "term": "Steem",
+      "group": "ecosystem"
+    },
+    {
+      "term": "SBD",
+      "group": "ecosystem"
+    },
+    {
+      "term": "Play to Earn",
+      "group": "earning"
+    },
+    {
+      "term": "P2E",
+      "group": "earning"
+    },
+    {
+      "term": "Play for Steem",
+      "group": "earning"
+    },
+    {
+      "term": "Play 4 Steem",
+      "group": "earning"
+    }
+  ],
+  "pages": {
+    "index.html": {
+      "primary": "Steem Games",
+      "supporting": [
+        "Web3 Games",
+        "Blockchain Games",
+        "Play to Earn Games",
+        "Steem Gaming Directory",
+        "Steem Games Directory",
+        "Steem",
+        "SBD",
+        "Play to Earn",
+        "P2E",
+        "Play for Steem",
+        "Play 4 Steem"
+      ],
+      "urlKeywords": []
+    },
+    "about.html": {
+      "primary": "Steem Gaming Directory",
+      "supporting": [
+        "Steem Games",
+        "Steem Gaming",
+        "Web3 Gaming",
+        "Blockchain Gaming"
+      ],
+      "urlKeywords": []
+    },
+    "faq.html": {
+      "primary": "Play to Earn Games",
+      "supporting": [
+        "Play to Earn",
+        "P2E",
+        "Play for Steem",
+        "Play 4 Steem",
+        "SBD",
+        "Steem"
+      ],
+      "urlKeywords": []
+    },
+    "game-info.html": {
+      "primary": "Steem Game",
+      "supporting": [
+        "Web3 Game",
+        "Blockchain Game",
+        "Play to Earn Game",
+        "Web3 Gaming",
+        "Blockchain Gaming",
+        "Play to Earn Gaming",
+        "Steem"
+      ],
+      "urlKeywords": []
+    }
+  },
+  "usage": {
+    "primaryKeyword": "Use exactly one primary keyword per page.",
+    "supportingKeywords": "Supporting terms are contextual suggestions and are not all required to appear.",
+    "url": "URL checks run only when urlKeywords are explicitly configured for a page. Dynamic query-string routes cannot be validated from a static filename.",
+    "density": "A density above 3% is only an advisory heuristic, not a search-engine ranking threshold.",
+    "limitations": "The audit checks source text only. It does not measure search volume, keyword difficulty, search intent, rankings, or Google indexing."
+  }
+}
