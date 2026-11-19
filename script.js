@@ -206,7 +206,7 @@
     }
     report.summary=summarize(report.checks);report.score=report.summary.score;renderReport(report);
   }
-  function evaluate(files, allPaths = files.map(file => file.path)) {
+  function evaluate(files, allPaths = files.map(file => file.path), keywordConfig = null) {
     const isDocument = source => /<!doctype\s+html|<html\b/i.test(source);
     const isRedirect = source => /<meta\b[^>]*http-equiv\s*=\s*["']refresh["']/i.test(source) || /\blocation\.replace\s*\(/i.test(source);
     // Only complete, top-level HTML documents are treated as public pages.
@@ -294,38 +294,56 @@
 
     const parsedPages = html.map(file => ({ file, doc: new DOMParser().parseFromString(file.text, "text/html") }));
     const pageMeta = parsedPages.map(x => ({path:x.file.path,title:x.doc.querySelector("title")?.textContent.trim()||"",description:x.doc.querySelector('meta[name="description"]')?.getAttribute("content")?.trim()||""}));
-    // Infer a page topic phrase from its H1 (title fallback), then inspect its on-page placement.
-    // This is a source-code heuristic, not keyword-volume or live search-intent research.
-    const keywordStopWords = new Set(("a an and are as at be by for from in into is it of on or the to with your our welcome home official").split(" "));
+    // Use a project-specific keyword strategy when supplied; retain H1/title inference for projects without one.
+    const normalizeKeyword = value => (value || "").toLocaleLowerCase().match(/[\\p{L}\\p{N}]+/gu)?.join(" ") || "";
+    const countPhrase = (text, phrase) => {
+      if (!phrase) return 0;
+      const haystack = " " + normalizeKeyword(text) + " ";
+      const needle = " " + normalizeKeyword(phrase) + " ";
+      let total = 0, offset = 0;
+      while ((offset = haystack.indexOf(needle, offset)) !== -1) { total++; offset += needle.length; }
+      return total;
+    };
     const keywordPages = parsedPages.map(({file,doc}) => {
-      const title = doc.querySelector("title")?.textContent || "";
-      const h1 = doc.querySelector("h1")?.textContent || "";
-      const description = doc.querySelector('meta[name="description"]')?.getAttribute("content") || "";
-      const sourceText = h1 || title;
-      const tokens = (sourceText.toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) || []).filter(word => !keywordStopWords.has(word));
-      const phrase = tokens.slice(0, Math.min(3, tokens.length)).join(" ");
-      const normalize = value => (value || "").toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu)?.join(" ") || "";
-      const phrasePattern = phrase ? new RegExp("(^| )" + phrase + "( |$)", "g") : null;
-      const body = doc.body?.textContent || "";
-      const normalizedBody = normalize(body);
-      const occurrences = phrasePattern ? (normalizedBody.match(phrasePattern) || []).length : 0;
-      const wordCount = normalizedBody ? normalizedBody.split(" ").length : 0;
-      const density = wordCount ? occurrences / wordCount * 100 : 0;
-      let pathText = file.path.toLocaleLowerCase().replace(/\.[a-z0-9]+$/i, "").replace(/[-_]/g, " ");
+      const titleText = doc.querySelector("title")?.textContent || "";
+      const h1Text = doc.querySelector("h1")?.textContent || "";
+      const descriptionText = doc.querySelector('meta[name="description"]')?.getAttribute("content") || "";
+      const target = keywordConfig?.pages?.[file.path] || keywordConfig?.defaultPage || null;
+      const phrase = target?.primary || "";
+      const normalize = normalizeKeyword;
+      const bodyText = doc.body?.textContent || "";
+      let pathText = file.path.toLocaleLowerCase().replace(/\\.[a-z0-9]+$/i, "").replace(/[-_]/g, " ");
       try { pathText = decodeURIComponent(pathText); } catch (_) {}
-      return {path:file.path,phrase,title:normalize(title),h1:normalize(h1),description:normalize(description),url:normalize(pathText),body:normalizedBody,occurrences,wordCount,density,hasH1:!!h1};
+      const urlTerms = Array.isArray(target?.urlKeywords) ? target.urlKeywords : [];
+      const wordCount = normalize(bodyText).split(" ").filter(Boolean).length;
+      const occurrences = countPhrase(bodyText, phrase);
+      return {
+        path:file.path, phrase: phrase || "", title:normalize(titleText), h1:normalize(h1Text),
+        description:normalize(descriptionText), url:normalize(pathText), body:normalize(bodyText),
+        urlTerms, hasTarget:!!phrase, hasH1:!!h1Text, occurrences, wordCount,
+        density:wordCount ? occurrences / wordCount * 100 : 0,
+        supporting:Array.isArray(target?.supporting) ? target.supporting : []
+      };
     });
-    const keywordApplicable = keywordPages.filter(page => page.phrase);
+    const keywordApplicable = keywordPages.filter(page => page.hasTarget);
     const keywordSummary = (key, label) => {
       if (!hasHtml) return [null, "No eligible public HTML documents were found."];
-      if (!keywordApplicable.length) return [null, "No usable topic phrase could be inferred from page H1 or title text."];
-      const missing = keywordApplicable.filter(page => !page[key].includes(page.phrase));
+      if (key === "url") {
+        const urlPages = keywordPages.filter(page => page.urlTerms.length);
+        if (!urlPages.length) return ["N/A", "No URL keyword targets are configured; URL relevance is not inferred from unrelated page filenames."];
+        const missing = urlPages.filter(page => !page.urlTerms.some(term => page.url.includes(normalizeKeyword(term))));
+        return [missing.length === 0, missing.length
+          ? "Configured URL keyword(s) missing on: " + missing.map(page => page.path + ' ("' + page.urlTerms.join('", "') + '")').join(", ")
+          : "Configured URL keyword targets found on all applicable pages."];
+      }
+      if (!keywordApplicable.length) return [null, "No page-specific primary keywords were configured for this project."];
+      const missing = keywordApplicable.filter(page => !page[key].includes(normalizeKeyword(page.phrase)));
       return [missing.length === 0, missing.length
-        ? "Inferred topic phrase missing from " + label + " on: " + missing.map(page => page.path + ' ("' + page.phrase + '")').join(", ")
-        : "Inferred topic phrase found in " + label + " on all audited pages."];
+        ? "Configured primary keyword missing from " + label + " on: " + missing.map(page => page.path + ' ("' + page.phrase + '")').join(", ")
+        : "Configured primary keyword found in " + label + " on all applicable pages."];
     };
     const keywordDensityIssues = keywordApplicable.filter(page => !page.wordCount || !page.occurrences || page.density > 3);
-
+    const keywordH1Missing = keywordApplicable.filter(page => !page.h1.includes(normalizeKeyword(page.phrase)));
     const duplicateValues = key => {const grouped=new Map();pageMeta.filter(x=>x[key]).forEach(x=>{const v=x[key].toLocaleLowerCase();grouped.set(v,[...(grouped.get(v)||[]),x.path]);});return [...grouped.values()].filter(g=>g.length>1);};
     const titleDup=duplicateValues("title"),descDup=duplicateValues("description");
     const titleLong=pageMeta.filter(x=>x.title&&(x.title.length<15||x.title.length>70));
@@ -365,14 +383,15 @@
     const missingLandmarks=parsedPages.filter(x=>!x.doc.querySelector("main")||!x.doc.querySelector("nav"));
     const incompleteOg=parsedPages.filter(x=>!x.doc.querySelector('meta[property="og:description"]')||!x.doc.querySelector('meta[property="og:type"]')||!x.doc.querySelector('meta[property="og:url"]'));
     const extra={
-      "keyword-target":[!hasHtml?null:keywordApplicable.length===html.length,keywordApplicable.length+" of "+html.length+" page(s) have an inferred topic phrase from H1/title. Phrases are heuristic suggestions, not verified target keywords."],
-      "keyword-title":[!hasHtml?null:keywordSummary("title","page title")[0],keywordSummary("title","page title")[1]],
-      "keyword-description":[!hasHtml?null:keywordSummary("description","meta description")[0],keywordSummary("description","meta description")[1]],
-      "keyword-url":[!hasHtml?null:keywordSummary("url","URL slug")[0],keywordSummary("url","URL slug")[1]],
-      "keyword-content":[!hasHtml?null:keywordSummary("body","visible page content")[0],keywordSummary("body","visible page content")[1]],
+      "keyword-target":[!hasHtml?null:keywordApplicable.length===html.length,keywordApplicable.length+" of "+html.length+" page(s) have a primary keyword configured in "+(keywordConfig?.sourceFile||"the keyword strategy")+". This is a configured target, not search-volume research."],
+      "keyword-title":[keywordSummary("title","page title")[0],keywordSummary("title","page title")[1]],
+      "keyword-description":[keywordSummary("description","meta description")[0],keywordSummary("description","meta description")[1]],
+      "keyword-url":[keywordSummary("url","URL slug")[0],keywordSummary("url","URL slug")[1]],
+      "keyword-content":[keywordSummary("body","visible page content")[0],keywordSummary("body","visible page content")[1]],
+      "keyword-h1":[!hasHtml?null:!keywordApplicable.length?null:keywordH1Missing.length===0,keywordApplicable.length?(keywordH1Missing.length?"Primary keyword missing from H1 on: "+keywordH1Missing.map(page=>page.path+' ("'+page.phrase+'")').join(", "):"Primary keyword found in H1 on all applicable pages."):"No configured primary keywords available."],
       "keyword-density":[!hasHtml?null:!keywordApplicable.length?null:keywordDensityIssues.length===0,keywordApplicable.length?keywordDensityIssues.length
-        ? "Potential keyword-use issue: "+keywordDensityIssues.map(page=>page.path+" ("+page.occurrences+" occurrence(s), "+page.density.toFixed(2)+"% estimated density)").join("; ")+". This is an advisory heuristic, not a Google ranking threshold."
-        : "No obvious repetition issue detected; estimated exact-phrase density is at or below 3%. Density alone is not a ranking factor.":"No inferred topic phrases available."],
+        ? "Potential primary-keyword usage issue: "+keywordDensityIssues.map(page=>page.path+" ("+page.occurrences+" occurrence(s), "+page.density.toFixed(2)+"% estimated density)").join("; ")+". Advisory only; density is not a Google ranking threshold."
+        : "No obvious primary-keyword repetition issue detected; estimated exact-phrase density is at or below 3%. Density alone is not a ranking factor.":"No configured primary keywords available."],
       "title-length":[!hasHtml?null:titleLong.length===0,titleLong.length?"Titles outside advisory 15–70 characters: "+titleLong.map(x=>x.path+" ("+x.title.length+")").join(", "):"Available titles fall within advisory 15–70 character range."],
       "title-unique":[!hasHtml?null:titleDup.length===0,titleDup.length?"Duplicate titles: "+titleDup.map(x=>x.join(", ")).join("; "):"No duplicate static titles detected."],
       "description-length":[!hasHtml?null:pageMeta.every(x=>!x.description)?null:descLong.length===0,descLong.length?"Descriptions outside advisory 50–160 characters: "+descLong.map(x=>x.path+" ("+x.description.length+")").join(", "):"Available descriptions fall within advisory range."],
@@ -437,7 +456,15 @@
       if(!project)throw new Error("Unknown project configuration.");
       let checks=[],offPageEvidence={candidates:[],errors:[]},data=null,note="";
       if(auditType==="on-page"){
-        data=await loadProjectFiles(project);checks=evaluate(data.contents,data.allPaths);
+        data=await loadProjectFiles(project);
+        let keywordConfig=null;
+        if(projectId==="steem-games"){
+          const response=await fetch("./keywords/steemgames.json?v="+Date.now(),{headers:{Accept:"application/json"},cache:"no-store"});
+          if(!response.ok) throw new Error("Steem Games keyword strategy could not be loaded (HTTP "+response.status+").");
+          keywordConfig=await response.json();
+          if(keywordConfig.projectId!=="steem-games"||!keywordConfig.pages||!Array.isArray(keywordConfig.keywords)) throw new Error("Steem Games keyword strategy has an invalid format.");
+        }
+        checks=evaluate(data.contents,data.allPaths,keywordConfig);
         note=(data.totalFiles>data.selectedFiles?"Selected "+data.selectedFiles+" of "+data.totalFiles+" supported source files because the configured safety limit was reached. ":"")+(data.failedFiles?"Downloaded "+data.contents.length+" of "+data.selectedFiles+" selected source files; "+data.failedFiles+" could not be downloaded. ":"All "+data.contents.length+" selected supported source files were downloaded. ")+"Only complete public HTML documents are used for page-level checks; nested admin tools, redirect aliases and HTML fragments are excluded. Dynamic headings may be marked UNKNOWN for live verification. Every on-page check is recalculated on each run and is based on public source files.";
       }else{
         offPageEvidence=await searchOffPage(project);
