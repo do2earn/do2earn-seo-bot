@@ -17,18 +17,15 @@ Automated source-code SEO checks for Do2Earn projects.
 
 **Production URL:** https://do2earn.dev/do2earn-seo-bot/
 
-The source of truth is this repository. The public website is served by `do2earn/do2earn.github.io`; GitHub Pages cannot mount this repository at an arbitrary sub-path by itself. The included GitHub Actions workflow syncs the four runtime files (`index.html`, `style.css`, `script.js`, `on-page-checklist.json`, and `off-page-checklist.json`) into the `do2earn-seo-bot/` directory of the website repository.
+This repository is the source of truth and publishes itself directly with GitHub Actions and GitHub Pages. It does not copy files to, commit to, or require a token for `do2earn/do2earn.github.io`.
 
-## Enable automatic publishing
+The project Pages site inherits the account's existing custom domain. Because the account-level Pages site uses `do2earn.dev`, this project is served at `https://do2earn.dev/do2earn-seo-bot/`. GitHub documents that project sites inherit the custom domain configured for the user or organization site unless a project-specific domain overrides it.
 
-In this repository, open **Settings → Secrets and variables → Actions** and add:
+### One-time GitHub Pages setup
 
-- **Name:** `SITE_DEPLOY_TOKEN`
-- **Value:** a fine-grained GitHub Personal Access Token for the `do2earn` account, restricted to the `do2earn/do2earn.github.io` repository, with **Contents: Read and write** permission.
+In this repository, open **Settings → Pages** and set **Build and deployment → Source** to **GitHub Actions**. This one-time repository setting is required before the first deployment. Then open **Actions → Publish SEO Bot** and run the workflow once if the initial push did not deploy successfully.
 
-The workflow safely skips deployment until this secret exists. After adding it, run **Actions → Publish SEO Bot → Run workflow** once. Future pushes to `main` will publish automatically.
-
-The workflow creates/updates only `do2earn-seo-bot/` in the website repository. It does not change the website's `CNAME` or other site files.
+After Pages is enabled, every push to `main` automatically validates the SEO source and deploys the standalone site. No `SITE_DEPLOY_TOKEN`, cross-repository write permission, database, Cloudflare Worker, or paid hosting service is needed.
 
 ## Run locally
 
