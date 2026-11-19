@@ -1,4 +1,4 @@
-name: Deploy SEO Bot
+name: Publish SEO Bot
 
 on:
   push:
@@ -9,43 +9,48 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
+  publish:
     runs-on: ubuntu-latest
+    env:
+      SITE_DEPLOY_TOKEN: ${{ secrets.SITE_DEPLOY_TOKEN }}
     steps:
       - name: Check out SEO Bot source
         uses: actions/checkout@v4
 
-      - name: Validate source and build deployment files
+      - name: Validate SEO bot source and checklists
+        run: |
+          node --check script.js
+          node -e "JSON.parse(require('fs').readFileSync('on-page-checklist.json','utf8')); JSON.parse(require('fs').readFileSync('off-page-checklist.json','utf8')); const k=JSON.parse(require('fs').readFileSync('keywords/steemgames.json','utf8')); if(k.projectId!=='steem-games'||!Array.isArray(k.keywords)||!k.pages) process.exit(1); console.log('SEO source, checklists and keyword strategy are valid.')"
+
+      - name: Explain missing deployment token
+        if: env.SITE_DEPLOY_TOKEN == ''
+        run: echo 'SITE_DEPLOY_TOKEN is not configured. Source files are saved; automatic publishing is skipped.'
+
+      - name: Check out the Do2Earn website
+        if: env.SITE_DEPLOY_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          repository: do2earn/do2earn.github.io
+          ref: main
+          token: ${{ secrets.SITE_DEPLOY_TOKEN }}
+          path: website
+
+      - name: Sync SEO Bot to the website subdirectory
+        if: env.SITE_DEPLOY_TOKEN != ''
         run: |
           set -euo pipefail
-          node --check script.js
-          node - <<'NODE'
-          const fs = require('fs');
-          JSON.parse(fs.readFileSync('on-page-checklist.json', 'utf8'));
-          JSON.parse(fs.readFileSync('off-page-checklist.json', 'utf8'));
-          const keywords = JSON.parse(fs.readFileSync('keywords/steemgames.json', 'utf8'));
-          if (keywords.projectId !== 'steem-games' || !Array.isArray(keywords.keywords) || !keywords.pages) {
-            throw new Error('Steem Games keyword configuration is invalid.');
-          }
-          for (const file of fs.readdirSync('public-manifests').filter(name => name.endsWith('.json'))) {
-            JSON.parse(fs.readFileSync('public-manifests/' + file, 'utf8'));
-          }
-          console.log('SEO Bot source and JSON assets validated.');
-          NODE
-          test -f worker.js
-          test -f wrangler.toml
-          rm -rf dist
-          mkdir -p dist/keywords dist/public-manifests
-          cp index.html style.css script.js on-page-checklist.json off-page-checklist.json dist/
-          cp keywords/steemgames.json dist/keywords/
-          cp public-manifests/*.json dist/public-manifests/
-          echo 'Deployment bundle created:'
-          find dist -type f -print | sort
-
-      - name: Deploy to Cloudflare
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: d334e3c238734436efc92cf3b63c311f
-          command: deploy --config wrangler.toml
-
+          TARGET="website/do2earn-seo-bot"
+          mkdir -p "$TARGET/public-manifests" "$TARGET/keywords"
+          cp index.html style.css script.js on-page-checklist.json off-page-checklist.json "$TARGET/"
+          cp keywords/steemgames.json "$TARGET/keywords/"
+          if [ -d public-manifests ]; then cp public-manifests/*.json "$TARGET/public-manifests/"; fi
+          cd website
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A do2earn-seo-bot/
+          if git diff --cached --quiet; then
+            echo 'No website changes to publish.'
+          else
+            git commit -m 'Deploy Do2Earn SEO Bot'
+            git push origin main
+          fi
