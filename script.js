@@ -22,15 +22,16 @@
     $("coverage-text").textContent = report.summary.determined + " of " + (report.summary.applicable ?? report.summary.total) + " applicable checks determined"; $("pages-text").textContent = report.filesScanned + " source files scanned";
     $("progress-fill").style.width = (report.score || 0) + "%"; $("progress-bar").setAttribute("aria-valuenow", String(report.score || 0));
     const list = $("checklist"); list.replaceChildren(); let category = "";
-    report.checks.forEach(check => {
+    report.checks.forEach((check, index) => {
       if (check.category !== category) { category = check.category; const heading = document.createElement("h4"); heading.className = "check-category"; heading.textContent = category; list.append(heading); }
       const row = document.createElement("article"); row.className = "check-item status-" + check.status.toLowerCase();
+      const number = document.createElement("span"); number.className = "check-number"; number.textContent = String(index + 1).padStart(2, "0"); number.setAttribute("aria-label", "Checklist item " + (index + 1));
       const icon = document.createElement("span"); icon.className = "result-icon"; icon.textContent = check.status === "PASS" ? "✓" : check.status === "FAIL" ? "!" : check.status === "N/A" ? "—" : "?";
       const body = document.createElement("span"); body.className = "check-copy";
       const title = document.createElement("strong"); title.className = "check-title"; title.textContent = check.title;
       const detail = document.createElement("span"); detail.className = "check-detail"; detail.textContent = check.detail; body.append(title, detail);
       if (check.evidence) { const evidence = document.createElement("span"); evidence.className = "check-evidence"; evidence.textContent = check.evidence; body.append(evidence); }
-      const badge = document.createElement("span"); badge.className = "result-status"; badge.textContent = check.status; row.append(icon, body, badge); list.append(row);
+      const badge = document.createElement("span"); badge.className = "result-status"; badge.textContent = check.status; row.append(number, icon, body, badge); list.append(row);
     });
 
     const panel=$("offpage-panel"), evidenceList=$("offpage-results");
